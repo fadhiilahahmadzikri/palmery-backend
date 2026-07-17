@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: palmery_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: palm_oil
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: palmery_backend
+    restart: always
+    ports:
+      - "80:8000"
+    environment:
+      # Koneksi antar-container menggunakan nama service 'db' dan port bawaan 5432
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/palm_oil
+      - DATA_PROVIDER=database
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
