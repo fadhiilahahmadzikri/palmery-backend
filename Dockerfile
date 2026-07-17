@@ -17,9 +17,8 @@ WORKDIR $HOME/app
 # Copy the rest of the application
 COPY --chown=user . $HOME/app/
 
-# Make port 8000 the default, but allow overriding via PORT env var
-ENV PORT=8000
-EXPOSE $PORT
+# Expose the port Hugging Face Spaces uses
+EXPOSE 7860
 
-# Run the FastAPI application with Uvicorn, using the PORT environment variable
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+# Run the FastAPI application with Uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
