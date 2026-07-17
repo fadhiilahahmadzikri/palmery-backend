@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ header.report_title }}</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #000;
+        }
+        .header h2 {
+            margin: 5px 0;
+            font-weight: normal;
+        }
+        .header p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-size: 14px;
+        }
+        th {
+            background-color: #CAFF3F;
+            color: #000;
+            font-weight: bold;
+        }
+        td.right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ header.company_name }}</h1>
+        <h2>{{ header.report_title }}</h2>
+        <p>Tanggal Cetak: {{ header.print_date }} | {{ header.generator }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tanggal</th>
+                <th>Pemanen</th>
+                <th>Janjang</th>
+                <th>BJR (kg)</th>
+                <th>Tonase (kg)</th>
+                <th>Denda (Rp)</th>
+                <th>Total Premi (Rp)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in records %}
+            <tr>
+                <td>{{ r.harvest_date }}</td>
+                <td>{{ r.harvester_name }}</td>
+                <td class="right">{{ r.input_total_bunches }}</td>
+                <td class="right">{{ r.input_avg_bunch_weight }}</td>
+                <td class="right">{{ r.calc_total_tonnage }}</td>
+                <td class="right">{{ r.input_unripe_penalty }}</td>
+                <td class="right">{{ r.total_final_premium }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
