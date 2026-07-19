@@ -32,24 +32,44 @@ class WordExporter(BaseExporter):
         p_date.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
         # Table
-        table = document.add_table(rows=1, cols=7)
+        table = document.add_table(rows=1, cols=9)
         table.style = 'Table Grid'
         
         hdr_cells = table.rows[0].cells
-        headers = ["Tanggal", "Pemanen", "Janjang", "BJR (kg)", "Tonase (kg)", "Denda (Rp)", "Total Premi (Rp)"]
+        headers = ["Tanggal", "Pemanen", "Lokasi", "Janjang", "BJR", "Bruto", "Brondolan", "Mentah", "Netto"]
         for i, header in enumerate(headers):
             hdr_cells[i].text = header
             hdr_cells[i].paragraphs[0].runs[0].bold = True
             
         for r in records:
             row_cells = table.add_row().cells
-            row_cells[0].text = r.harvest_date.strftime("%Y-%m-%d") if hasattr(r.harvest_date, 'strftime') else str(r.harvest_date)
-            row_cells[1].text = r.harvester_name
-            row_cells[2].text = str(r.input_total_bunches)
-            row_cells[3].text = str(r.input_avg_bunch_weight)
-            row_cells[4].text = str(r.calc_total_tonnage)
-            row_cells[5].text = f"Rp {r.input_unripe_penalty:,.0f}".replace(',', '.')
-            row_cells[6].text = f"Rp {r.total_final_premium:,.0f}".replace(',', '.')
+            date_str = r.harvest_date.strftime("%Y-%m-%d") if hasattr(r.harvest_date, 'strftime') else str(r.harvest_date)
+            h_name = getattr(r, 'harvester_name', str(r.harvester_id))
+            
+            gross = getattr(r, 'gross_tonnage_kg', 0)
+            net = getattr(r, 'net_tonnage_kg', 0)
+            loose_deduct = getattr(r, 'loose_fruit_deduction_kg', 0)
+            fine_mode = getattr(r, 'fine_mode_snapshot', 'rupiah')
+            fine_amount = getattr(r, 'fine_amount_rupiah', 0)
+            weight_deduct = getattr(r, 'weight_deduction_kg', 0)
+            unripe = getattr(r, 'unripe_bunch_count', 0)
+            
+            if unripe == 0:
+                denda_str = "-"
+            elif fine_mode == 'rupiah':
+                denda_str = f"Rp {fine_amount:,.0f} ({unripe} jjg)"
+            else:
+                denda_str = f"{weight_deduct} kg ({unripe} jjg)"
+
+            row_cells[0].text = date_str
+            row_cells[1].text = h_name
+            row_cells[2].text = "TPH " + str(getattr(r, 'collection_point_id', '-'))[:4]
+            row_cells[3].text = str(getattr(r, 'valid_bunch_count', 0))
+            row_cells[4].text = str(getattr(r, 'avg_bunch_weight_kg', 0))
+            row_cells[5].text = str(gross)
+            row_cells[6].text = str(loose_deduct)
+            row_cells[7].text = denda_str
+            row_cells[8].text = str(net)
             
         output = io.BytesIO()
         document.save(output)

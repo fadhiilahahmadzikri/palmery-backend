@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Slip Gaji Pemanen</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            margin-top: 1cm;
+        }
+        body {
+            font-family: Helvetica, sans-serif;
+            font-size: 11pt;
+            color: #333;
+        }
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #2ecc71;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .info-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .info-table td {
+            padding: 5px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .data-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .right-align {
+            text-align: right !important;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #e8f5e9;
+        }
+        .signature-table {
+            width: 100%;
+            margin-top: 50px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div>
+        <table class="header-table">
+            <tr>
+                <td width="15%">
+                    <!-- Placeholder logo -->
+                    {% if header.logo_path %}
+                    <img src="{{ header.logo_path }}" height="50" alt="Logo">
+                    {% endif %}
+                </td>
+                <td width="85%">
+                    <h2 style="margin:0; color:#2c3e50;">{{ header.company_name }}</h2>
+                    <p style="margin:0; font-size:10pt; color:#7f8c8d;">
+                        {{ header.address }}<br>
+                        Telp: {{ header.contact }} | Email: {{ header.email }}
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="title" style="margin-top: 30px;">SLIP GAJI PEMANEN</div>
+
+    <table class="info-table">
+        <tr>
+            <td width="20%"><b>Pemanen</b></td>
+            <td width="30%">: {{ data.pemanen }}</td>
+            <td width="20%"><b>Periode</b></td>
+            <td width="30%">: {{ data.periode }}</td>
+        </tr>
+    </table>
+
+    <table class="data-table">
+        <tr>
+            <th colspan="2" style="background-color: #2ecc71; color: white;">Rangkuman Prestasi Panen</th>
+        </tr>
+        <tr>
+            <td width="70%">Total Janjang Masuk</td>
+            <td width="30%" class="right-align">{{ data.total_janjang }} jjg</td>
+        </tr>
+        <tr>
+            <td>Total Janjang Denda (Mentah, dll)</td>
+            <td class="right-align">{{ data.denda_janjang }} jjg</td>
+        </tr>
+        <tr>
+            <td>Total Tonase Bersih (Netto)</td>
+            <td class="right-align">{{ data.total_netto }} kg</td>
+        </tr>
+    </table>
+
+    <table class="data-table">
+        <tr>
+            <th colspan="6" style="background-color: #f39c12; color: white;">Rincian Prestasi Harian</th>
+        </tr>
+        <tr>
+            <th width="15%">Tanggal</th>
+            <th width="15%" class="right-align">Jjg Valid</th>
+            <th width="15%" class="right-align">Jjg Denda</th>
+            <th width="20%" class="right-align">Netto (kg)</th>
+            <th width="20%" class="right-align">Premi Brondol (Rp)</th>
+            <th width="15%" class="right-align">Potongan (Rp)</th>
+        </tr>
+        {% for r in data.daily_records %}
+        <tr>
+            <td>{{ r.date }}</td>
+            <td class="right-align">{{ r.valid }}</td>
+            <td class="right-align">{{ r.unripe }}</td>
+            <td class="right-align">{{ r.net_kg }}</td>
+            <td class="right-align">{{ r.loose_rp }}</td>
+            <td class="right-align" style="color: red;">{{ r.fine_rp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <table class="data-table">
+        <tr>
+            <th width="70%" style="background-color: #34495e; color: white;">Rincian Pendapatan & Potongan</th>
+            <th width="30%" class="right-align" style="background-color: #34495e; color: white;">Jumlah (Rp)</th>
+        </tr>
+        <tr>
+            <td>Premi Brondolan (Loose Fruit)</td>
+            <td class="right-align">{{ data.brondolan_rp }}</td>
+        </tr>
+        
+        {% for t in data.tiers %}
+        <tr>
+            <td style="padding-left: 20px;">- Premi Progresif Tier {{ t.level }} ({{ t.kg }} kg x Rp {{ t.rate }})</td>
+            <td class="right-align">{{ t.subtotal }}</td>
+        </tr>
+        {% endfor %}
+
+        <tr>
+            <td style="color: red;">Potongan Denda (Mode: {{ data.fine_mode }})</td>
+            <td class="right-align" style="color: red;">({{ data.denda_rp }})</td>
+        </tr>
+        <tr class="total-row">
+            <td>TOTAL PENDAPATAN BERSIH (NET PAY)</td>
+            <td class="right-align">Rp {{ data.net_pay }}</td>
+        </tr>
+    </table>
+
+    <table class="signature-table">
+        <tr>
+            <td width="50%">
+                Mengetahui,<br><br><br><br><br>
+                (___________________)<br>
+                Asisten Divisi / Manager
+            </td>
+            <td width="50%">
+                Diterima Oleh,<br><br><br><br><br>
+                (___________________)<br>
+                {{ data.pemanen }}
+            </td>
+        </tr>
+    </table>
+
+    <!-- Footer -->
+    <div style="text-align:center; font-size:9pt; color:#95a5a6; border-top:1px solid #eee; padding-top:10px; margin-top:50px;">
+        Dokumen ini dicetak secara otomatis oleh Sistem Penggajian
+    </div>
+</body>
+</html>

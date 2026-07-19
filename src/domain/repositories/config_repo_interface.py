@@ -1,44 +1,39 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from src.infrastructure.database.models import AppConfig, ProgressiveTier
+from src.infrastructure.database.models import (
+    FineConfiguration, LooseFruitConfiguration, 
+    PremiumEligibilityConfiguration, ProgressiveTier
+)
 
 class IConfigRepository(ABC):
     @abstractmethod
-    async def get_all_configs(self) -> List[AppConfig]:
+    async def get_active_fine_config(self) -> Optional[FineConfiguration]:
+        pass
+        
+    @abstractmethod
+    async def get_active_loose_fruit_config(self) -> Optional[LooseFruitConfiguration]:
+        pass
+        
+    @abstractmethod
+    async def get_active_eligibility_config(self) -> Optional[PremiumEligibilityConfiguration]:
         pass
 
     @abstractmethod
-    async def get_config_by_id(self, config_id: int) -> Optional[AppConfig]:
+    async def get_active_tiers(self) -> List[ProgressiveTier]:
+        pass
+        
+    @abstractmethod
+    async def create_fine_config(self, data: dict) -> FineConfiguration:
         pass
 
     @abstractmethod
-    async def create_config(self, data: dict) -> AppConfig:
+    async def create_loose_fruit_config(self, data: dict) -> LooseFruitConfiguration:
         pass
 
     @abstractmethod
-    async def update_config(self, key: str, value: float) -> Optional[AppConfig]:
-        pass
-
-    @abstractmethod
-    async def delete_config(self, config_id: int) -> bool:
-        pass
-
-    @abstractmethod
-    async def get_all_tiers(self) -> List[ProgressiveTier]:
-        pass
-
-    @abstractmethod
-    async def get_tier_by_id(self, tier_id: int) -> Optional[ProgressiveTier]:
+    async def create_eligibility_config(self, data: dict) -> PremiumEligibilityConfiguration:
         pass
 
     @abstractmethod
     async def create_tier(self, data: dict) -> ProgressiveTier:
-        pass
-
-    @abstractmethod
-    async def update_tier(self, tier_id: int, data: dict) -> Optional[ProgressiveTier]:
-        pass
-
-    @abstractmethod
-    async def delete_tier(self, tier_id: int) -> bool:
         pass

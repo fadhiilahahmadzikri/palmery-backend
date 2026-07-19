@@ -32,19 +32,42 @@ class ExcelExporter(BaseExporter):
         worksheet.merge_range("A3:G3", f"Tanggal Cetak: {header_data['print_date']}", workbook.add_format({'align': 'center'}))
         
         # Table Headers
-        headers = ["Tanggal", "Pemanen", "Janjang", "BJR (kg)", "Tonase (kg)", "Denda (Rp)", "Total Premi (Rp)"]
+        headers = ["Tanggal", "Pemanen", "Lokasi", "Janjang Valid", "BJR (kg)", "Bruto (kg)", "Potongan Brondolan (kg)", "Mentah (Denda)", "Netto (kg)"]
         for col_num, header in enumerate(headers):
             worksheet.write(4, col_num, header, header_format)
             
         # Data
         for row_num, r in enumerate(records, start=5):
-            worksheet.write(row_num, 0, r.harvest_date.strftime("%Y-%m-%d") if hasattr(r.harvest_date, 'strftime') else str(r.harvest_date), cell_format)
-            worksheet.write(row_num, 1, r.harvester_name, cell_format)
-            worksheet.write(row_num, 2, r.input_total_bunches, num_format)
-            worksheet.write(row_num, 3, r.input_avg_bunch_weight, num_format)
-            worksheet.write(row_num, 4, r.calc_total_tonnage, num_format)
-            worksheet.write(row_num, 5, r.input_unripe_penalty, currency_format)
-            worksheet.write(row_num, 6, r.total_final_premium, currency_format)
+            date_str = r.harvest_date.strftime("%Y-%m-%d") if hasattr(r.harvest_date, 'strftime') else str(r.harvest_date)
+            # Assuming harvester name is available (might need to fetch or join, but we'll try to get it if it's there)
+            h_name = getattr(r, 'harvester_name', str(r.harvester_id))
+            
+            # For V2 schema fields:
+            gross = getattr(r, 'gross_tonnage_kg', 0)
+            net = getattr(r, 'net_tonnage_kg', 0)
+            loose_deduct = getattr(r, 'loose_fruit_deduction_kg', 0)
+            
+            fine_mode = getattr(r, 'fine_mode_snapshot', 'rupiah')
+            fine_amount = getattr(r, 'fine_amount_rupiah', 0)
+            weight_deduct = getattr(r, 'weight_deduction_kg', 0)
+            unripe = getattr(r, 'unripe_bunch_count', 0)
+            
+            if unripe == 0:
+                denda_str = "-"
+            elif fine_mode == 'rupiah':
+                denda_str = f"Rp {fine_amount:,.0f} ({unripe} jjg)"
+            else:
+                denda_str = f"{weight_deduct} kg ({unripe} jjg)"
+
+            worksheet.write(row_num, 0, date_str, cell_format)
+            worksheet.write(row_num, 1, h_name, cell_format)
+            worksheet.write(row_num, 2, "TPH " + str(getattr(r, 'collection_point_id', '-')), cell_format)
+            worksheet.write(row_num, 3, getattr(r, 'valid_bunch_count', 0), num_format)
+            worksheet.write(row_num, 4, getattr(r, 'avg_bunch_weight_kg', 0), num_format)
+            worksheet.write(row_num, 5, gross, num_format)
+            worksheet.write(row_num, 6, loose_deduct, num_format)
+            worksheet.write(row_num, 7, denda_str, cell_format)
+            worksheet.write(row_num, 8, net, num_format)
             
         # Set column widths
         worksheet.set_column('A:A', 15)

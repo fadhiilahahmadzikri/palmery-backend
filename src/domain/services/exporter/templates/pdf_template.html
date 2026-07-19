@@ -61,23 +61,27 @@
             <tr>
                 <th>Tanggal</th>
                 <th>Pemanen</th>
+                <th>Lokasi</th>
                 <th>Janjang</th>
                 <th>BJR (kg)</th>
-                <th>Tonase (kg)</th>
-                <th>Denda (Rp)</th>
-                <th>Total Premi (Rp)</th>
+                <th>Bruto (kg)</th>
+                <th>Brondolan (kg)</th>
+                <th>Mentah (Denda)</th>
+                <th>Netto (kg)</th>
             </tr>
         </thead>
         <tbody>
             {% for r in records %}
             <tr>
-                <td>{{ r.harvest_date }}</td>
-                <td>{{ r.harvester_name }}</td>
-                <td class="right">{{ r.input_total_bunches }}</td>
-                <td class="right">{{ r.input_avg_bunch_weight }}</td>
-                <td class="right">{{ r.calc_total_tonnage }}</td>
-                <td class="right">{{ r.input_unripe_penalty }}</td>
-                <td class="right">{{ r.total_final_premium }}</td>
+                <td>{{ r.tanggal }}</td>
+                <td>{{ r.pemanen }}</td>
+                <td>{{ r.lokasi }}</td>
+                <td class="right">{{ r.janjang }}</td>
+                <td class="right">{{ r.bjr }}</td>
+                <td class="right">{{ r.bruto }}</td>
+                <td class="right">{{ r.brondolan }}</td>
+                <td class="right">{{ r.mentah }}</td>
+                <td class="right">{{ r.netto }}</td>
             </tr>
             {% endfor %}
         </tbody>
