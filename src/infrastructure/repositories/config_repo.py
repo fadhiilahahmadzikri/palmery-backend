@@ -65,3 +65,23 @@ class ConfigRepository(IConfigRepository):
         await self.db.commit()
         await self.db.refresh(db_obj)
         return db_obj
+
+    async def update_tier(self, tier_id: int, data: dict) -> Optional[ProgressiveTier]:
+        result = await self.db.execute(select(ProgressiveTier).where(ProgressiveTier.id == tier_id))
+        db_obj = result.scalar_one_or_none()
+        if db_obj is None:
+            return None
+        for key, value in data.items():
+            setattr(db_obj, key, value)
+        await self.db.commit()
+        await self.db.refresh(db_obj)
+        return db_obj
+
+    async def delete_tier(self, tier_id: int) -> bool:
+        result = await self.db.execute(select(ProgressiveTier).where(ProgressiveTier.id == tier_id))
+        db_obj = result.scalar_one_or_none()
+        if db_obj is None:
+            return False
+        await self.db.delete(db_obj)
+        await self.db.commit()
+        return True

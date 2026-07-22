@@ -1,12 +1,22 @@
 import uuid
+import enum
 from sqlalchemy import (
     Column, Integer, String, Numeric, DateTime, Date, 
-    ForeignKey, Boolean, Text, Computed, UniqueConstraint, Index
+    ForeignKey, Boolean, Text, Computed, UniqueConstraint, Index, Enum
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from src.infrastructure.database.session import Base
+
+class PayrollPeriodStatus(str, enum.Enum):
+    open = "open"
+    closed = "closed"
+
+class PayrollBatchStatus(str, enum.Enum):
+    ongoing = "ongoing"
+    final = "final"
+
 
 class AppConfig(Base):
     __tablename__ = 'app_config'
@@ -155,7 +165,7 @@ class PayrollPeriod(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     year = Column(Integer, nullable=False)
     month = Column(Integer, nullable=False)
-    status = Column(String(20), nullable=False, default='open')
+    status = Column(Enum(PayrollPeriodStatus, name='payroll_period_status', native_enum=False, length=20), nullable=False, default=PayrollPeriodStatus.open)
     closed_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -205,16 +215,29 @@ class DailyHarvestRecord(Base):
         Index('idx_daily_harvest_period', 'payroll_period_id'),
     )
 
-    harvester = relationship("Harvester")
-    block = relationship("Block", back_populates="harvest_records")
-    collection_point = relationship("CollectionPoint", back_populates="harvest_records")
+    harvester = relationship("Harvester", lazy="joined")
+    block = relationship("Block", back_populates="harvest_records", lazy="joined")
+    collection_point = relationship("CollectionPoint", back_populates="harvest_records", lazy="joined")
     payroll_period = relationship("PayrollPeriod")
+
+    @property
+    def harvester_name(self) -> str | None:
+        return self.harvester.full_name if self.harvester else None
+
+    @property
+    def location_name(self) -> str | None:
+        if self.collection_point:
+            return f"TPH {self.collection_point.point_number}"
+        if self.block:
+            return f"Blok {self.block.code}"
+        return None
+
 
 class PayrollBatch(Base):
     __tablename__ = 'payroll_batches'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     payroll_period_id = Column(UUID(as_uuid=True), ForeignKey('payroll_periods.id'), nullable=False, unique=True)
-    status = Column(String(20), nullable=False, default='draft')
+    status = Column(Enum(PayrollBatchStatus, name='payroll_batch_status', native_enum=False, length=20), nullable=False, default=PayrollBatchStatus.ongoing)
     generated_at = Column(DateTime(timezone=True), server_default=func.now())
     generated_by = Column(String(100), default='system')
     

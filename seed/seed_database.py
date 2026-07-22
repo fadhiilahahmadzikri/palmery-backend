@@ -176,7 +176,7 @@ async def seed_data():
         await db.commit()
         
         print("Seeding Payroll Batches and Summaries...")
-        for month_num, status in [(5, 'paid'), (6, 'approved'), (7, 'draft')]:
+        for month_num, status in [(5, 'final'), (6, 'final'), (7, 'draft')]:
             period = periods_dict[month_num]
             month_records = [r for r in records if r.payroll_period_id == period.id]
             if not month_records: continue

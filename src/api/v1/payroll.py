@@ -30,17 +30,13 @@ from src.domain.engine.payroll_calculator import calculate_monthly_payroll, Elig
 
 router = APIRouter(prefix="/api/v1/payroll", tags=["payroll"])
 
+@router.get("/periods/current", response_model=PayrollPeriodResponse)
+async def get_current_period(repo: IPayrollRepository = Depends(get_payroll_repo)):
+    return await repo.get_current_period()
+
 @router.post("/periods/open", response_model=PayrollPeriodResponse)
 async def open_period(req: PayrollPeriodCreate, repo: IPayrollRepository = Depends(get_payroll_repo)):
     return await repo.get_or_create_open_period(req.year, req.month)
-
-@router.post("/periods/{period_id}/close", response_model=PayrollPeriodResponse)
-async def close_period(period_id: uuid.UUID, repo: IPayrollRepository = Depends(get_payroll_repo)):
-    period = await repo.close_period(period_id)
-    if not period:
-        raise HTTPException(status_code=404, detail="Period not found")
-    return period
-
 @router.get("/periods", response_model=List[dict])
 async def get_periods_for_year(year: int, db: AsyncSession = Depends(get_db)):
     from sqlalchemy import select
@@ -310,8 +306,8 @@ async def generate_payroll_batch(
     # 5. Bulk insert everything
     await payroll_repo.bulk_create_payroll_summaries(batch.id, summaries_data, tier_details_data_map)
     
-    # 6. Update Batch status to generated
-    batch = await payroll_repo.update_batch_status(batch.id, 'generated', generated_by, f"Calculated payroll for {len(grouped_records)} harvesters.")
+    # 6. Update Batch status to ongoing
+    batch = await payroll_repo.update_batch_status(batch.id, 'ongoing', generated_by, f"Calculated payroll for {len(grouped_records)} harvesters.")
     return batch
 
 @router.get("/periods/{period_id}/batches", response_model=List[PayrollBatchResponse])
@@ -330,7 +326,15 @@ async def update_batch_status(
     notes: Optional[str] = None,
     payroll_repo: IPayrollRepository = Depends(get_payroll_repo)
 ):
-    batch = await payroll_repo.update_batch_status(batch_id, status, changed_by, notes)
+    from src.domain.models.payroll import normalize_batch_status
+    norm_status = normalize_batch_status(status)
+    
+    if norm_status == 'final':
+        batch = await payroll_repo.finalize_batch(batch_id)
+    else:
+        # Fallback for ongoing
+        batch = await payroll_repo.update_batch_status(batch_id, norm_status, changed_by, notes)
+        
     if not batch:
         raise HTTPException(status_code=404, detail="Batch not found")
     return batch

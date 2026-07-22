@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Any
+from typing import List, Any, Optional
 import io
 
 class BaseExporter(ABC):
@@ -9,8 +9,9 @@ class BaseExporter(ABC):
     """
     
     @abstractmethod
-    def generate(self, data: List[Any]) -> io.BytesIO:
+    def generate(self, data: List[Any], period_label: Optional[str] = None) -> io.BytesIO:
         """
         Takes a list of data models and returns a BytesIO stream of the generated file.
         """
         pass
+

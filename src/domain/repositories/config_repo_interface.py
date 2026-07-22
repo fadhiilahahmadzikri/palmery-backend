@@ -37,3 +37,11 @@ class IConfigRepository(ABC):
     @abstractmethod
     async def create_tier(self, data: dict) -> ProgressiveTier:
         pass
+
+    @abstractmethod
+    async def update_tier(self, tier_id: int, data: dict) -> Optional[ProgressiveTier]:
+        pass
+
+    @abstractmethod
+    async def delete_tier(self, tier_id: int) -> bool:
+        pass

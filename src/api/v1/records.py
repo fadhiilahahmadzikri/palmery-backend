@@ -23,19 +23,94 @@ async def get_records(
     return PaginatedHarvestRecordResponse(data=records, total=total)
 
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from typing import Optional, Tuple
+from datetime import date, timedelta
+import calendar
 from src.domain.services.exporter.excel_exporter import ExcelExporter
 from src.domain.services.exporter.pdf_exporter import PdfExporter
 from src.domain.services.exporter.word_exporter import WordExporter
 
-@router.get("/export")
-async def export_records(
-    format: str = Query("xlsx"),
-    search: str = Query(None),
-    repo: IHarvestRepository = Depends(get_harvest_repo)
-):
-    # Get all records for export (limit 1000 for safety)
-    records, _ = await repo.get_records(skip=0, limit=1000, search=search)
-    
+class ExportFilterRequest(BaseModel):
+    format: str = "xlsx"  # "xlsx" | "pdf" | "docx"
+    period_mode: str = "all"  # "all" | "current_week" | "last_week" | "current_month" | "last_month" | "current_year" | "last_year" | "specific_month" | "specific_year" | "custom"
+    year: Optional[int] = None
+    month: Optional[int] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    division_id: Optional[uuid.UUID] = None
+    block_id: Optional[uuid.UUID] = None
+    search: Optional[str] = None
+
+def resolve_export_period(req: ExportFilterRequest) -> Tuple[Optional[date], Optional[date], Optional[str]]:
+    today = date.today()
+    mode = req.period_mode
+
+    if mode == "current_week":
+        start = today - timedelta(days=today.weekday())
+        end = start + timedelta(days=6)
+        label = f"{start.strftime('%d %b %Y')} - {end.strftime('%d %b %Y')} (Minggu Ini)"
+        return start, end, label
+    elif mode == "last_week":
+        start = today - timedelta(days=today.weekday() + 7)
+        end = start + timedelta(days=6)
+        label = f"{start.strftime('%d %b %Y')} - {end.strftime('%d %b %Y')} (Minggu Lalu)"
+        return start, end, label
+    elif mode == "current_month":
+        start = date(today.year, today.month, 1)
+        _, last_day = calendar.monthrange(today.year, today.month)
+        end = date(today.year, today.month, last_day)
+        label = f"{start.strftime('%B %Y')} (Bulan Ini)"
+        return start, end, label
+    elif mode == "last_month":
+        first_of_current = date(today.year, today.month, 1)
+        last_of_prev = first_of_current - timedelta(days=1)
+        start = date(last_of_prev.year, last_of_prev.month, 1)
+        end = last_of_prev
+        label = f"{start.strftime('%B %Y')} (Bulan Lalu)"
+        return start, end, label
+    elif mode == "current_year":
+        start = date(today.year, 1, 1)
+        end = date(today.year, 12, 31)
+        label = f"Tahun {today.year}"
+        return start, end, label
+    elif mode == "last_year":
+        yr = today.year - 1
+        start = date(yr, 1, 1)
+        end = date(yr, 12, 31)
+        label = f"Tahun {yr}"
+        return start, end, label
+    elif mode == "specific_month":
+        yr = req.year or today.year
+        mo = req.month or today.month
+        start = date(yr, mo, 1)
+        _, last_day = calendar.monthrange(yr, mo)
+        end = date(yr, mo, last_day)
+        month_name = calendar.month_name[mo]
+        label = f"{month_name} {yr}"
+        return start, end, label
+    elif mode == "specific_year":
+        yr = req.year or today.year
+        start = date(yr, 1, 1)
+        end = date(yr, 12, 31)
+        label = f"Tahun {yr}"
+        return start, end, label
+    elif mode == "custom":
+        start = req.start_date
+        end = req.end_date
+        if start and end:
+            label = f"{start.strftime('%d %b %Y')} - {end.strftime('%d %b %Y')}"
+        elif start:
+            label = f"Mulai {start.strftime('%d %b %Y')}"
+        elif end:
+            label = f"Sampai {end.strftime('%d %b %Y')}"
+        else:
+            label = "Semua Tanggal"
+        return start, end, label
+    else:
+        return None, None, "Semua Data"
+
+def generate_export_response(records: list, format: str, period_label: Optional[str]) -> StreamingResponse:
     if format == "pdf":
         exporter = PdfExporter()
         media_type = "application/pdf"
@@ -48,14 +123,64 @@ async def export_records(
         exporter = ExcelExporter()
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         filename = "laporan_premi.xlsx"
-        
-    output = exporter.generate(records)
-    
+
+    output = exporter.generate(records, period_label=period_label)
+
     return StreamingResponse(
-        output, 
-        media_type=media_type, 
+        output,
+        media_type=media_type,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+@router.post("/export")
+async def export_records_post(
+    req: ExportFilterRequest,
+    repo: IHarvestRepository = Depends(get_harvest_repo)
+):
+    start_date, end_date, period_label = resolve_export_period(req)
+    records = await repo.get_records_for_export(
+        start_date=start_date,
+        end_date=end_date,
+        division_id=req.division_id,
+        block_id=req.block_id,
+        search=req.search
+    )
+    return generate_export_response(records, req.format, period_label)
+
+@router.get("/export")
+async def export_records(
+    format: str = Query("xlsx"),
+    search: str = Query(None),
+    period_mode: str = Query("all"),
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    division_id: Optional[uuid.UUID] = Query(None),
+    block_id: Optional[uuid.UUID] = Query(None),
+    repo: IHarvestRepository = Depends(get_harvest_repo)
+):
+    req = ExportFilterRequest(
+        format=format,
+        period_mode=period_mode,
+        year=year,
+        month=month,
+        start_date=start_date,
+        end_date=end_date,
+        division_id=division_id,
+        block_id=block_id,
+        search=search
+    )
+    start_d, end_d, period_label = resolve_export_period(req)
+    records = await repo.get_records_for_export(
+        start_date=start_d,
+        end_date=end_d,
+        division_id=division_id,
+        block_id=block_id,
+        search=search
+    )
+    return generate_export_response(records, format, period_label)
+
 
 from pydantic import BaseModel
 class BulkExportReq(BaseModel):

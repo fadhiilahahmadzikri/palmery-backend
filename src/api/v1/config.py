@@ -5,7 +5,7 @@ from src.domain.models.config import (
     FineConfigCreate, FineConfigResponse,
     LooseFruitConfigCreate, LooseFruitConfigResponse,
     EligibilityConfigCreate, EligibilityConfigResponse,
-    TierCreate, TierResponse
+    TierCreate, TierUpdate, TierResponse
 )
 from src.domain.repositories.config_repo_interface import IConfigRepository
 from src.api.dependencies import get_config_repo
@@ -43,3 +43,18 @@ async def get_active_tiers(repo: IConfigRepository = Depends(get_config_repo)):
 @router.post("/tiers", response_model=TierResponse, status_code=201)
 async def create_tier(req: TierCreate, repo: IConfigRepository = Depends(get_config_repo)):
     return await repo.create_tier(req.model_dump())
+
+@router.put("/tiers/{tier_id}", response_model=TierResponse)
+async def update_tier(tier_id: int, req: TierUpdate, repo: IConfigRepository = Depends(get_config_repo)):
+    from fastapi import HTTPException
+    updated = await repo.update_tier(tier_id, req.model_dump(exclude_none=True))
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Tier tidak ditemukan")
+    return updated
+
+@router.delete("/tiers/{tier_id}", status_code=204)
+async def delete_tier(tier_id: int, repo: IConfigRepository = Depends(get_config_repo)):
+    from fastapi import HTTPException
+    deleted = await repo.delete_tier(tier_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Tier tidak ditemukan")

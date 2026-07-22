@@ -53,6 +53,7 @@
     <div class="header">
         <h1>{{ header.company_name }}</h1>
         <h2>{{ header.report_title }}</h2>
+        {% if header.period_label %}<p style="font-weight: bold; margin-bottom: 3px;">Periode: {{ header.period_label }}</p>{% endif %}
         <p>Tanggal Cetak: {{ header.print_date }} | {{ header.generator }}</p>
     </div>
 
@@ -62,11 +63,12 @@
                 <th>Tanggal</th>
                 <th>Pemanen</th>
                 <th>Lokasi</th>
-                <th>Janjang</th>
+                <th>Janjang (jjg)</th>
                 <th>BJR (kg)</th>
                 <th>Bruto (kg)</th>
-                <th>Brondolan (kg)</th>
-                <th>Mentah (Denda)</th>
+                <th>Ptgn Brondolan (kg)</th>
+                <th>Mentah (jjg)</th>
+                <th>Denda Mentah (Rp)</th>
                 <th>Netto (kg)</th>
             </tr>
         </thead>
@@ -80,7 +82,8 @@
                 <td class="right">{{ r.bjr }}</td>
                 <td class="right">{{ r.bruto }}</td>
                 <td class="right">{{ r.brondolan }}</td>
-                <td class="right">{{ r.mentah }}</td>
+                <td class="right">{{ r.mentah_jjg }}</td>
+                <td class="right">{{ r.denda_rp }}</td>
                 <td class="right">{{ r.netto }}</td>
             </tr>
             {% endfor %}

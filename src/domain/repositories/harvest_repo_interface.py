@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
+from datetime import date
 import uuid
 from src.infrastructure.database.models import DailyHarvestRecord
 
@@ -30,4 +31,15 @@ class IHarvestRepository(ABC):
         
     @abstractmethod
     async def get_records_by_period_and_harvester(self, period_id: uuid.UUID, harvester_id: uuid.UUID) -> List[DailyHarvestRecord]:
+        pass
+
+    @abstractmethod
+    async def get_records_for_export(
+        self,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        division_id: Optional[uuid.UUID] = None,
+        block_id: Optional[uuid.UUID] = None,
+        search: Optional[str] = None
+    ) -> List[DailyHarvestRecord]:
         pass

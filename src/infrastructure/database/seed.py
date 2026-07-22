@@ -4,7 +4,8 @@ from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.infrastructure.database.session import AsyncSessionLocal
 from src.infrastructure.database.models import (
-    AppConfig, ProgressiveTier, Division, Block, CollectionPoint, Harvester
+    AppConfig, ProgressiveTier, Division, Block, CollectionPoint, Harvester,
+    FineConfiguration, LooseFruitConfiguration, PremiumEligibilityConfiguration
 )
 from sqlalchemy.future import select
 
@@ -24,6 +25,29 @@ async def seed_data():
             AppConfig(config_key='MIN_BUNCHES_REQUIRED', config_value=100, description='Minimum bunches to qualify for FFB premium')
         ]
         session.add_all(configs)
+
+        # Insert Modern Configs
+        fine = FineConfiguration(
+            mode="rupiah",
+            rate_per_bunch_rupiah=5000,
+            effective_from=date(2026, 1, 1),
+            effective_until=None
+        )
+
+        loose = LooseFruitConfiguration(
+            flat_percentage=0.10,
+            rate_per_kg_rupiah=75.0,
+            effective_from=date(2026, 1, 1),
+            effective_until=None
+        )
+
+        eligibility = PremiumEligibilityConfiguration(
+            basis_kg=1000,
+            min_bunch_count=100,
+            effective_from=date(2026, 1, 1),
+            effective_until=None
+        )
+        session.add_all([fine, loose, eligibility])
 
         # Insert Progressive Tiers
         tiers = [

@@ -56,6 +56,13 @@ class TierBase(BaseModel):
 class TierCreate(TierBase):
     pass
 
+class TierUpdate(BaseModel):
+    min_kg: Optional[float] = None
+    max_kg: Optional[float] = None
+    rate_per_kg: Optional[float] = None
+    effective_from: Optional[date] = None
+    effective_until: Optional[date] = None
+
 class TierResponse(TierBase):
     model_config = ConfigDict(from_attributes=True)
     id: int

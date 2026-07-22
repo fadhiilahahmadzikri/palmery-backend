@@ -3,17 +3,31 @@ from typing import List, Optional
 import uuid
 from src.infrastructure.database.models import PayrollPeriod, PayrollSummary, PayrollBatch
 
+# Valid batch statuses (simplified):
+#   'draft'  — kalkulasi sedang berjalan / preview, data masih bisa berubah
+#   'final'  — kalkulasi dikunci, siap ekspor resmi
+# Backward-compatible: 'generated', 'approved', 'paid' diperlakukan sama seperti statusnya
+# saat dibaca di UI (lihat helper normalize_batch_status di payroll.py).
+
+VALID_BATCH_STATUSES = {'draft', 'final'}
+
 class IPayrollRepository(ABC):
     @abstractmethod
     async def get_or_create_open_period(self, year: int, month: int) -> PayrollPeriod:
         pass
 
     @abstractmethod
-    async def close_period(self, period_id: uuid.UUID) -> PayrollPeriod:
+    async def get_current_period(self) -> PayrollPeriod:
+        """Return (or create) the PayrollPeriod for the current calendar month."""
         pass
 
     @abstractmethod
     async def create_payroll_batch(self, period_id: uuid.UUID, generated_by: str) -> PayrollBatch:
+        pass
+
+    @abstractmethod
+    async def finalize_batch(self, batch_id: uuid.UUID) -> Optional[PayrollBatch]:
+        """Lock a draft batch so it becomes final (irreversible)."""
         pass
 
     @abstractmethod

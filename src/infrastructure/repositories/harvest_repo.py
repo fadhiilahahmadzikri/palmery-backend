@@ -1,8 +1,10 @@
 from typing import List, Optional, Tuple
+from datetime import date
 import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from src.infrastructure.database.models import DailyHarvestRecord
 from src.domain.repositories.harvest_repo_interface import IHarvestRepository
 
@@ -101,3 +103,38 @@ class HarvestRepository(IHarvestRepository):
             )
         )
         return result.scalars().all()
+
+    async def get_records_for_export(
+        self,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        division_id: Optional[uuid.UUID] = None,
+        block_id: Optional[uuid.UUID] = None,
+        search: Optional[str] = None
+    ) -> List[DailyHarvestRecord]:
+        query = select(DailyHarvestRecord).options(
+            joinedload(DailyHarvestRecord.harvester),
+            joinedload(DailyHarvestRecord.block),
+            joinedload(DailyHarvestRecord.collection_point)
+        )
+
+        if start_date:
+            query = query.where(DailyHarvestRecord.harvest_date >= start_date)
+        if end_date:
+            query = query.where(DailyHarvestRecord.harvest_date <= end_date)
+        if block_id:
+            query = query.where(DailyHarvestRecord.block_id == block_id)
+        if division_id:
+            from src.infrastructure.database.models import Block
+            query = query.join(Block, DailyHarvestRecord.block_id == Block.id).where(Block.division_id == division_id)
+        if search:
+            from src.infrastructure.database.models import Harvester
+            query = query.join(Harvester, DailyHarvestRecord.harvester_id == Harvester.id).where(
+                (Harvester.full_name.ilike(f"%{search}%")) |
+                (Harvester.employee_number.ilike(f"%{search}%"))
+            )
+
+        query = query.order_by(DailyHarvestRecord.harvest_date.asc())
+        result = await self.db.execute(query)
+        return result.scalars().all()
+
