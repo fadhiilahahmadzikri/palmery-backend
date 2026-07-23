@@ -10,6 +10,7 @@ from src.api.v1.records import router as records_router
 from src.api.v1.harvesters import router as harvesters_router
 from src.api.v1.locations import router as locations_router
 from src.api.v1.payroll import router as payroll_router
+from src.api.v1.system import router as system_router
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,7 @@ app.include_router(records_router)
 app.include_router(harvesters_router)
 app.include_router(locations_router)
 app.include_router(payroll_router)
+app.include_router(system_router)
 
 @app.get("/health")
 def health_check():

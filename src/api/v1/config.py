@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from typing import List
+from typing import List, Optional
 
 from src.domain.models.config import (
     FineConfigCreate, FineConfigResponse,
@@ -28,7 +28,7 @@ async def get_active_loose_fruit_config(repo: IConfigRepository = Depends(get_co
 async def create_loose_fruit_config(req: LooseFruitConfigCreate, repo: IConfigRepository = Depends(get_config_repo)):
     return await repo.create_loose_fruit_config(req.model_dump())
 
-@router.get("/eligibility/active", response_model=EligibilityConfigResponse)
+@router.get("/eligibility/active", response_model=Optional[EligibilityConfigResponse])
 async def get_active_eligibility_config(repo: IConfigRepository = Depends(get_config_repo)):
     return await repo.get_active_eligibility_config()
 

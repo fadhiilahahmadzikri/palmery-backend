@@ -5,6 +5,7 @@ class TierConfig(BaseModel):
     min_kg: float
     max_kg: Optional[float]
     rate: float
+    is_enabled: bool = True
 
 class HarvestConfig(BaseModel):
     flat_rate_percentage: float = 0.10
@@ -21,6 +22,9 @@ class PremiumResult(BaseModel):
     premium_ffb: float
     total_final_premium: float
     tier_status: str
+    qualified_tier_level: Optional[int] = None
+    applied_tier_level: Optional[int] = None
+    tier_disabled_qualified: bool = False
 
 def calculate_premium(
     harvester_name: str,
@@ -43,7 +47,9 @@ def calculate_premium(
     # 4. Validations & FFB Premium
     premium_ffb = 0.0
     tier_status = "Non-Syarat"
-    highest_tier_id = 0
+    highest_qualified_tier = 0
+    highest_applied_tier = 0
+    tier_disabled_qualified = False
     
     if total_bunches >= config.min_bunches_required:
         over_basis_kg = max(0.0, net_ffb - config.base_target_kg)
@@ -68,14 +74,20 @@ def calculate_premium(
                 
                 kg_in_tier = min(remaining_kg, capacity)
                 if kg_in_tier > 0:
-                    highest_tier_id = tier_idx
+                    highest_qualified_tier = tier.tier_level if hasattr(tier, 'tier_level') else tier_idx
+                    if tier.is_enabled:
+                        highest_applied_tier = highest_qualified_tier
+                        premium_ffb += kg_in_tier * tier.rate
+                    else:
+                        tier_disabled_qualified = True
                 
-                premium_ffb += kg_in_tier * tier.rate
                 remaining_kg -= kg_in_tier
                 tier_idx += 1
                 
-            if highest_tier_id > 0:
-                tier_status = f"Tier {highest_tier_id}"
+            if highest_applied_tier > 0:
+                tier_status = f"Tier {highest_applied_tier}"
+            elif highest_qualified_tier > 0 and tier_disabled_qualified:
+                tier_status = f"Tier {highest_qualified_tier} (Nonaktif)"
             else:
                 tier_status = "Basis"
             
@@ -91,5 +103,8 @@ def calculate_premium(
         premium_loose_fruit=premium_loose_fruit,
         premium_ffb=premium_ffb,
         total_final_premium=total_premium,
-        tier_status=tier_status
+        tier_status=tier_status,
+        qualified_tier_level=highest_qualified_tier if highest_qualified_tier > 0 else None,
+        applied_tier_level=highest_applied_tier if highest_applied_tier > 0 else None,
+        tier_disabled_qualified=tier_disabled_qualified
     )

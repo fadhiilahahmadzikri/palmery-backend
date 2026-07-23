@@ -126,6 +126,7 @@ class ProgressiveTier(Base):
     min_kg = Column(Numeric, nullable=False)
     max_kg = Column(Numeric)
     rate_per_kg = Column(Numeric, nullable=False)
+    is_enabled = Column(Boolean, nullable=False, default=True, server_default='true')
     effective_from = Column(Date, nullable=False, server_default=func.current_date())
     effective_until = Column(Date)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -50,6 +50,7 @@ class TierBase(BaseModel):
     min_kg: float = Field(..., ge=0)
     max_kg: Optional[float] = None
     rate_per_kg: float = Field(..., ge=0)
+    is_enabled: bool = True
     effective_from: date
     effective_until: Optional[date] = None
 
@@ -60,6 +61,7 @@ class TierUpdate(BaseModel):
     min_kg: Optional[float] = None
     max_kg: Optional[float] = None
     rate_per_kg: Optional[float] = None
+    is_enabled: Optional[bool] = None
     effective_from: Optional[date] = None
     effective_until: Optional[date] = None
 

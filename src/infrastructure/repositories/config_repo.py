@@ -12,20 +12,30 @@ class ConfigRepository(IConfigRepository):
         self.db = db
 
     async def get_active_fine_config(self) -> FineConfiguration:
+        import uuid
+        from datetime import date, datetime, timezone
         query = select(FineConfiguration).where(
             FineConfiguration.effective_until.is_(None)
         ).order_by(FineConfiguration.effective_from.desc()).limit(1)
         result = await self.db.execute(query)
-        return result.scalar()
+        cfg = result.scalar()
+        if cfg is None:
+            cfg = FineConfiguration(id=uuid.uuid4(), mode="rupiah", rate_per_bunch_rupiah=5000, effective_from=date(2026, 1, 1), created_at=datetime.now(timezone.utc))
+        return cfg
         
     async def get_active_loose_fruit_config(self) -> LooseFruitConfiguration:
+        import uuid
+        from datetime import date, datetime, timezone
         query = select(LooseFruitConfiguration).where(
             LooseFruitConfiguration.effective_until.is_(None)
         ).order_by(LooseFruitConfiguration.effective_from.desc()).limit(1)
         result = await self.db.execute(query)
-        return result.scalar()
+        cfg = result.scalar()
+        if cfg is None:
+            cfg = LooseFruitConfiguration(id=uuid.uuid4(), flat_percentage=0.10, rate_per_kg_rupiah=75.0, effective_from=date(2026, 1, 1), created_at=datetime.now(timezone.utc))
+        return cfg
         
-    async def get_active_eligibility_config(self) -> PremiumEligibilityConfiguration:
+    async def get_active_eligibility_config(self) -> Optional[PremiumEligibilityConfiguration]:
         query = select(PremiumEligibilityConfiguration).where(
             PremiumEligibilityConfiguration.effective_until.is_(None)
         ).order_by(PremiumEligibilityConfiguration.effective_from.desc()).limit(1)
