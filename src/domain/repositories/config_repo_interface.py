@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
+import uuid
 from src.infrastructure.database.models import (
     FineConfiguration, LooseFruitConfiguration, 
     PremiumEligibilityConfiguration, ProgressiveTier
@@ -44,4 +45,20 @@ class IConfigRepository(ABC):
 
     @abstractmethod
     async def delete_tier(self, tier_id: int) -> bool:
+        pass
+
+    @abstractmethod
+    async def bulk_delete_tiers(self, tier_ids: List[int]) -> dict:
+        pass
+
+    @abstractmethod
+    async def delete_fine_config(self, config_id: uuid.UUID) -> bool:
+        pass
+
+    @abstractmethod
+    async def delete_loose_fruit_config(self, config_id: uuid.UUID) -> bool:
+        pass
+
+    @abstractmethod
+    async def delete_eligibility_config(self, config_id: uuid.UUID) -> bool:
         pass

@@ -58,3 +58,34 @@ async def delete_tier(tier_id: int, repo: IConfigRepository = Depends(get_config
     deleted = await repo.delete_tier(tier_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Tier tidak ditemukan")
+
+from pydantic import BaseModel
+import uuid
+
+class BulkDeleteTiersReq(BaseModel):
+    tier_ids: List[int]
+
+@router.post("/tiers/bulk-delete")
+async def bulk_delete_tiers(req: BulkDeleteTiersReq, repo: IConfigRepository = Depends(get_config_repo)):
+    return await repo.bulk_delete_tiers(req.tier_ids)
+
+@router.delete("/fine/{config_id}", status_code=204)
+async def delete_fine_config(config_id: uuid.UUID, repo: IConfigRepository = Depends(get_config_repo)):
+    from fastapi import HTTPException
+    deleted = await repo.delete_fine_config(config_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Konfigurasi denda tidak ditemukan")
+
+@router.delete("/loose-fruit/{config_id}", status_code=204)
+async def delete_loose_fruit_config(config_id: uuid.UUID, repo: IConfigRepository = Depends(get_config_repo)):
+    from fastapi import HTTPException
+    deleted = await repo.delete_loose_fruit_config(config_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Konfigurasi brondolan tidak ditemukan")
+
+@router.delete("/eligibility/{config_id}", status_code=204)
+async def delete_eligibility_config(config_id: uuid.UUID, repo: IConfigRepository = Depends(get_config_repo)):
+    from fastapi import HTTPException
+    deleted = await repo.delete_eligibility_config(config_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Konfigurasi syarat premi tidak ditemukan")

@@ -29,6 +29,17 @@ class PayrollRepository(IPayrollRepository):
         now = datetime.now(timezone.utc)
         return await self.get_or_create_open_period(now.year, now.month)
 
+    async def close_period(self, period_id: uuid.UUID) -> Optional[PayrollPeriod]:
+        result = await self.db.execute(select(PayrollPeriod).where(PayrollPeriod.id == period_id))
+        period = result.scalar_one_or_none()
+        if not period:
+            return None
+        period.status = 'closed'
+        period.closed_at = datetime.now(timezone.utc)
+        await self.db.commit()
+        await self.db.refresh(period)
+        return period
+
     async def create_payroll_batch(self, period_id: uuid.UUID, generated_by: str) -> PayrollBatch:
         # Delete existing batch if any, to act as a pure refresh
         result = await self.db.execute(select(PayrollBatch).where(PayrollBatch.payroll_period_id == period_id))
@@ -119,3 +130,37 @@ class PayrollRepository(IPayrollRepository):
     async def get_summary_by_id(self, summary_id: uuid.UUID) -> Optional[PayrollSummary]:
         result = await self.db.execute(select(PayrollSummary).where(PayrollSummary.id == summary_id))
         return result.scalar_one_or_none()
+
+    async def delete_batch(self, batch_id: uuid.UUID) -> bool:
+        batch = await self.get_batch_by_id(batch_id)
+        if not batch:
+            return False
+        if batch.status == 'final':
+            raise ValueError("Batch payroll yang sudah dikunci (final) tidak dapat dihapus.")
+        await self.db.delete(batch)
+        await self.db.commit()
+        return True
+
+    async def bulk_delete_batches(self, batch_ids: List[uuid.UUID]) -> dict:
+        deleted_ids, blocked_ids, errors = [], [], []
+        for b_id in batch_ids:
+            batch = await self.get_batch_by_id(b_id)
+            if not batch:
+                continue
+            if batch.status == 'final':
+                blocked_ids.append(str(b_id))
+                errors.append(f"Batch {b_id}: Batch payroll berstatus final dan dikunci.")
+            else:
+                await self.db.delete(batch)
+                deleted_ids.append(str(b_id))
+
+        if deleted_ids:
+            await self.db.commit()
+
+        return {
+            "deleted_count": len(deleted_ids),
+            "blocked_count": len(blocked_ids),
+            "deleted_ids": deleted_ids,
+            "blocked_ids": blocked_ids,
+            "errors": errors
+        }

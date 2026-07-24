@@ -24,6 +24,10 @@ class IHarvestRepository(ABC):
     @abstractmethod
     async def delete_record(self, record_id: uuid.UUID) -> bool:
         pass
+
+    @abstractmethod
+    async def bulk_delete_records(self, record_ids: List[uuid.UUID]) -> dict:
+        pass
     
     @abstractmethod
     async def get_records_by_period(self, period_id: uuid.UUID) -> List[DailyHarvestRecord]:

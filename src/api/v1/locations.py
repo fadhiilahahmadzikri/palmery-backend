@@ -38,18 +38,44 @@ async def create_collection_point(req: CollectionPointCreate, repo: ILocationRep
 
 @router.delete("/divisions/{division_id}", status_code=204)
 async def delete_division(division_id: uuid.UUID, repo: ILocationRepository = Depends(get_location_repo)):
-    success = await repo.delete_division(division_id)
-    if not success: raise HTTPException(status_code=404, detail="Divisi tidak ditemukan")
+    try:
+        success = await repo.delete_division(division_id)
+        if not success: raise HTTPException(status_code=404, detail="Divisi tidak ditemukan")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
 
 @router.delete("/blocks/{block_id}", status_code=204)
 async def delete_block(block_id: uuid.UUID, repo: ILocationRepository = Depends(get_location_repo)):
-    success = await repo.delete_block(block_id)
-    if not success: raise HTTPException(status_code=404, detail="Blok tidak ditemukan")
+    try:
+        success = await repo.delete_block(block_id)
+        if not success: raise HTTPException(status_code=404, detail="Blok tidak ditemukan")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
 
 @router.delete("/points/{point_id}", status_code=204)
 async def delete_collection_point(point_id: uuid.UUID, repo: ILocationRepository = Depends(get_location_repo)):
-    success = await repo.delete_collection_point(point_id)
-    if not success: raise HTTPException(status_code=404, detail="TPH tidak ditemukan")
+    try:
+        success = await repo.delete_collection_point(point_id)
+        if not success: raise HTTPException(status_code=404, detail="TPH tidak ditemukan")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+from pydantic import BaseModel
+
+class BulkDeleteUUIDsReq(BaseModel):
+    ids: List[uuid.UUID]
+
+@router.post("/divisions/bulk-delete")
+async def bulk_delete_divisions(req: BulkDeleteUUIDsReq, repo: ILocationRepository = Depends(get_location_repo)):
+    return await repo.bulk_delete_divisions(req.ids)
+
+@router.post("/blocks/bulk-delete")
+async def bulk_delete_blocks(req: BulkDeleteUUIDsReq, repo: ILocationRepository = Depends(get_location_repo)):
+    return await repo.bulk_delete_blocks(req.ids)
+
+@router.post("/points/bulk-delete")
+async def bulk_delete_points(req: BulkDeleteUUIDsReq, repo: ILocationRepository = Depends(get_location_repo)):
+    return await repo.bulk_delete_points(req.ids)
 
 @router.put("/divisions/{division_id}", response_model=DivisionResponse)
 async def update_division(division_id: uuid.UUID, req: DivisionUpdate, repo: ILocationRepository = Depends(get_location_repo)):

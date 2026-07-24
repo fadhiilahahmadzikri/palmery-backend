@@ -39,3 +39,16 @@ async def delete_harvester(harvester_id: uuid.UUID, repo: IHarvesterRepository =
     success = await repo.delete_harvester(harvester_id)
     if not success:
         raise HTTPException(status_code=404, detail="Harvester not found")
+
+from pydantic import BaseModel
+
+class BulkDeleteHarvestersReq(BaseModel):
+    harvester_ids: List[uuid.UUID]
+
+@router.post("/bulk-delete")
+async def bulk_delete_harvesters(
+    req: BulkDeleteHarvestersReq,
+    repo: IHarvesterRepository = Depends(get_harvester_repo)
+):
+    result = await repo.bulk_delete_harvesters(req.harvester_ids)
+    return result

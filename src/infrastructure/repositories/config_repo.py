@@ -1,4 +1,5 @@
 from typing import List, Optional
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from src.infrastructure.database.models import (
@@ -91,6 +92,45 @@ class ConfigRepository(IConfigRepository):
         result = await self.db.execute(select(ProgressiveTier).where(ProgressiveTier.id == tier_id))
         db_obj = result.scalar_one_or_none()
         if db_obj is None:
+            return False
+        await self.db.delete(db_obj)
+        await self.db.commit()
+        return True
+
+    async def bulk_delete_tiers(self, tier_ids: List[int]) -> dict:
+        deleted_ids = []
+        for t_id in tier_ids:
+            result = await self.db.execute(select(ProgressiveTier).where(ProgressiveTier.id == t_id))
+            db_obj = result.scalar_one_or_none()
+            if db_obj:
+                await self.db.delete(db_obj)
+                deleted_ids.append(t_id)
+        if deleted_ids:
+            await self.db.commit()
+        return {"deleted_count": len(deleted_ids), "deleted_ids": deleted_ids}
+
+    async def delete_fine_config(self, config_id: uuid.UUID) -> bool:
+        result = await self.db.execute(select(FineConfiguration).where(FineConfiguration.id == config_id))
+        db_obj = result.scalar_one_or_none()
+        if not db_obj:
+            return False
+        await self.db.delete(db_obj)
+        await self.db.commit()
+        return True
+
+    async def delete_loose_fruit_config(self, config_id: uuid.UUID) -> bool:
+        result = await self.db.execute(select(LooseFruitConfiguration).where(LooseFruitConfiguration.id == config_id))
+        db_obj = result.scalar_one_or_none()
+        if not db_obj:
+            return False
+        await self.db.delete(db_obj)
+        await self.db.commit()
+        return True
+
+    async def delete_eligibility_config(self, config_id: uuid.UUID) -> bool:
+        result = await self.db.execute(select(PremiumEligibilityConfiguration).where(PremiumEligibilityConfiguration.id == config_id))
+        db_obj = result.scalar_one_or_none()
+        if not db_obj:
             return False
         await self.db.delete(db_obj)
         await self.db.commit()

@@ -72,6 +72,37 @@ class HarvestRepository(IHarvestRepository):
             await self.db.commit()
             return True
         return False
+
+    async def bulk_delete_records(self, record_ids: List[uuid.UUID]) -> dict:
+        deleted_ids = []
+        blocked_ids = []
+        errors = []
+
+        for rec_id in record_ids:
+            db_obj = await self.get_record_by_id(rec_id)
+            if not db_obj:
+                continue
+            try:
+                await self._check_immutability(db_obj)
+                await self.db.delete(db_obj)
+                deleted_ids.append(str(rec_id))
+            except ValueError as ve:
+                blocked_ids.append(str(rec_id))
+                errors.append(f"Record {rec_id}: {str(ve)}")
+            except Exception as e:
+                blocked_ids.append(str(rec_id))
+                errors.append(f"Record {rec_id}: {str(e)}")
+
+        if deleted_ids:
+            await self.db.commit()
+
+        return {
+            "deleted_count": len(deleted_ids),
+            "blocked_count": len(blocked_ids),
+            "deleted_ids": deleted_ids,
+            "blocked_ids": blocked_ids,
+            "errors": errors
+        }
         
     async def get_records_by_period(self, period_id: uuid.UUID) -> List[DailyHarvestRecord]:
         from src.infrastructure.database.models import PayrollPeriod

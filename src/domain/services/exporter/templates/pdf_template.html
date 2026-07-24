@@ -6,70 +6,148 @@
     <style>
         @page {
             size: A4 landscape;
-            margin: 2cm;
+            margin: 1.5cm;
         }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
-            color: #333;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            color: #23292f;
+            line-height: 1.5;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+
+        /* ---------- Letterhead ---------- */
+        .header-table {
+            width: 100%;
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #1c3d2e;
+            border-collapse: collapse;
         }
-        .header h1 {
+        .header-table td {
+            vertical-align: middle;
+        }
+        .company-name {
+            margin: 0 0 1px 0;
+            font-size: 14pt;
+            font-weight: bold;
+            color: #16211a;
+            letter-spacing: 0.2px;
+            line-height: 1.1;
+        }
+        .company-meta {
             margin: 0;
-            color: #000;
+            font-size: 8.5pt;
+            color: #6b7280;
+            line-height: 1.2;
         }
-        .header h2 {
-            margin: 5px 0;
-            font-weight: normal;
+        .doc-tag {
+            text-align: right;
+            font-size: 8pt;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #6b7280;
         }
-        .header p {
-            margin: 5px 0;
-            color: #666;
-            font-size: 14px;
+        .doc-period {
+            text-align: right;
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1c3d2e;
+            margin-top: 2px;
         }
-        table {
+
+        /* ---------- Data Table ---------- */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 12px;
+            margin-bottom: 16px;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            font-size: 14px;
-        }
-        th {
-            background-color: #CAFF3F;
-            color: #000;
+        .data-table th {
+            text-align: left;
+            font-size: 8.5pt;
+            letter-spacing: 0.3px;
             font-weight: bold;
+            color: #ffffff;
+            background-color: #1c3d2e;
+            padding: 8pt 8pt;
+            vertical-align: middle;
+            border: 1px solid #1c3d2e;
         }
-        td.right {
-            text-align: right;
+        .data-table td {
+            border-bottom: 1px solid #e2e8f0;
+            border-left: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+            padding: 7pt 8pt 6pt 8pt;
+            font-size: 9pt;
+            color: #1e293b;
+            vertical-align: middle;
+            line-height: 1.5;
+        }
+        .right {
+            text-align: right !important;
+        }
+        .center {
+            text-align: center !important;
+        }
+        .netto-cell {
+            font-weight: bold;
+            color: #1c3d2e;
+        }
+
+        /* ---------- Footer ---------- */
+        .doc-footer {
+            text-align: center;
+            font-size: 7.5pt;
+            color: #9ca3af;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 8px;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ header.company_name }}</h1>
-        <h2>{{ header.report_title }}</h2>
-        {% if header.period_label %}<p style="font-weight: bold; margin-bottom: 3px;">Periode: {{ header.period_label }}</p>{% endif %}
-        <p>Tanggal Cetak: {{ header.print_date }} | {{ header.generator }}</p>
-    </div>
+    <!-- Letterhead Header -->
+    <table class="header-table">
+        <tr>
+            <td width="55">
+                {% if header.logo_path %}
+                <img src="{{ header.logo_path }}" width="44" height="44" alt="Logo" style="border-radius: 4px;">
+                {% else %}
+                <div style="width:44px; height:44px; background-color:#f0fdf4; border:1.5px solid #1c3d2e; text-align:center; color:#1c3d2e; font-weight:bold; font-size:8pt; line-height:44px; border-radius:4px;">PALM</div>
+                {% endif %}
+            </td>
+            <td style="padding-left: 10px;">
+                <p class="company-name">{{ header.company_name }}</p>
+                <p class="company-meta">
+                    {{ header.address }} &nbsp;&middot;&nbsp; Telp: {{ header.contact }} &nbsp;&middot;&nbsp; {{ header.email }}
+                </p>
+            </td>
+            <td width="35%" style="text-align: right;">
+                <div class="doc-tag">{{ header.report_title }}</div>
+                {% if header.period_label %}<div class="doc-period">Periode: {{ header.period_label }}</div>{% endif %}
+                <div style="font-size: 7.5pt; color: #6b7280; margin-top: 3px;">
+                    Cetak: {{ header.print_date }} &nbsp;|&nbsp; {{ header.generator }}
+                </div>
+            </td>
+        </tr>
+    </table>
 
-    <table>
+    <table class="data-table">
         <thead>
             <tr>
-                <th>Tanggal</th>
-                <th>Pemanen</th>
-                <th>Lokasi</th>
-                <th>Janjang (jjg)</th>
-                <th>BJR (kg)</th>
-                <th>Bruto (kg)</th>
-                <th>Ptgn Brondolan (kg)</th>
-                <th>Mentah (jjg)</th>
-                <th>Denda Mentah (Rp)</th>
-                <th>Netto (kg)</th>
+                <th width="10%">Tanggal</th>
+                <th width="16%">Pemanen</th>
+                <th width="10%">Lokasi</th>
+                <th width="8%" class="right">Janjang</th>
+                <th width="8%" class="right">BJR (kg)</th>
+                <th width="10%" class="right">Bruto (kg)</th>
+                <th width="11%" class="right">Brondolan (kg)</th>
+                <th width="8%" class="right">Mentah</th>
+                <th width="10%" class="right">Denda (Rp)</th>
+                <th width="9%" class="right">Netto (kg)</th>
             </tr>
         </thead>
         <tbody>
@@ -84,10 +162,15 @@
                 <td class="right">{{ r.brondolan }}</td>
                 <td class="right">{{ r.mentah_jjg }}</td>
                 <td class="right">{{ r.denda_rp }}</td>
-                <td class="right">{{ r.netto }}</td>
+                <td class="right netto-cell">{{ r.netto }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="doc-footer">
+        Dokumen Laporan Rekapitulasi Panen ini dicetak secara otomatis oleh Sistem {{ header.company_name }}
+    </div>
 </body>
 </html>
+

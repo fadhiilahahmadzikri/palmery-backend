@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi.responses import StreamingResponse
 from src.infrastructure.database.session import get_db
-from src.infrastructure.database.models import Harvester, PayrollPeriod, PayrollTierDetail, PayrollSummary, PayrollBatch
+from src.infrastructure.database.models import Harvester, PayrollPeriod, PayrollTierDetail, PayrollSummary, PayrollBatch, Division, Block
 from src.domain.services.exporter.slip_pdf_exporter import SlipPdfExporter
 from src.domain.services.exporter.slip_excel_exporter import SlipExcelExporter
 from src.domain.services.exporter.slip_word_exporter import SlipWordExporter
@@ -37,27 +37,52 @@ async def get_current_period(repo: IPayrollRepository = Depends(get_payroll_repo
 @router.post("/periods/open", response_model=PayrollPeriodResponse)
 async def open_period(req: PayrollPeriodCreate, repo: IPayrollRepository = Depends(get_payroll_repo)):
     return await repo.get_or_create_open_period(req.year, req.month)
+
+@router.post("/periods/{period_id}/close", response_model=PayrollPeriodResponse)
+async def close_period(period_id: uuid.UUID, repo: IPayrollRepository = Depends(get_payroll_repo)):
+    period = await repo.close_period(period_id)
+    if not period:
+        raise HTTPException(status_code=404, detail="Periode payroll tidak ditemukan")
+    return period
 @router.get("/periods", response_model=List[dict])
 async def get_periods_for_year(year: int, db: AsyncSession = Depends(get_db)):
-    from sqlalchemy import select
+    from sqlalchemy import select, func
     from src.infrastructure.database.models import PayrollPeriod, PayrollBatch
-    
-    result = await db.execute(
-        select(PayrollPeriod, PayrollBatch.status)
-        .outerjoin(PayrollBatch, PayrollBatch.payroll_period_id == PayrollPeriod.id)
-        .where(PayrollPeriod.year == year)
+
+    # Subquery: latest batch per period (most recently generated)
+    latest_batch_sq = (
+        select(
+            PayrollBatch.payroll_period_id,
+            PayrollBatch.status,
+        )
+        .distinct(PayrollBatch.payroll_period_id)
+        .order_by(
+            PayrollBatch.payroll_period_id,
+            PayrollBatch.generated_at.desc(),
+        )
+        .subquery()
     )
-    
+
+    result = await db.execute(
+        select(PayrollPeriod, latest_batch_sq.c.status)
+        .outerjoin(
+            latest_batch_sq,
+            latest_batch_sq.c.payroll_period_id == PayrollPeriod.id,
+        )
+        .where(PayrollPeriod.year == year)
+        .order_by(PayrollPeriod.month)
+    )
+
     response = []
     for period, batch_status in result.all():
         response.append({
-            "id": period.id,
+            "id": str(period.id),
             "year": period.year,
             "month": period.month,
-            "is_closed": period.status == 'closed',
-            "batch_status": batch_status or "empty"
+            "is_closed": period.status == "closed",
+            "latest_batch_status": batch_status or None,
         })
-        
+
     return response
 
 @router.get("/harvesters/{harvester_id}/summary", response_model=PayrollSummaryResponse)
@@ -163,11 +188,21 @@ async def export_harvester_summary_on_the_fly(
     # 1. Generate summary dict
     summary_dict = await get_harvester_summary_on_the_fly(harvester_id, year, month, harvest_repo, payroll_repo, config_repo)
     
-    # 2. Fetch harvester name
-    harvester_res = await db.execute(select(Harvester).where(Harvester.id == harvester_id))
-    harvester = harvester_res.scalar_one_or_none()
-    h_name = harvester.full_name if harvester else "Unknown"
-    h_code = harvester.employee_number if harvester else "Unknown"
+    # 2. Fetch harvester with division and block names
+    from src.infrastructure.database.models import Division, Block
+    harvester_res = await db.execute(
+        select(Harvester, Division.name.label("division_name"), Block.code.label("block_code"))
+        .outerjoin(Division, Harvester.division_id == Division.id)
+        .outerjoin(Block, Harvester.block_id == Block.id)
+        .where(Harvester.id == harvester_id)
+    )
+    row = harvester_res.first()
+    if row:
+        harvester, div_name, blk_code = row[0], row[1], row[2]
+        h_name = harvester.full_name
+        h_code = harvester.employee_number
+    else:
+        h_name, h_code, div_name, blk_code = "Unknown", "Unknown", "Divisi Panen", "-"
     
     # 3. Format period name
     month_names = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
@@ -191,20 +226,22 @@ async def export_harvester_summary_on_the_fly(
     # 5. Generate file
     if format == "pdf":
         exp = SlipPdfExporter()
+        file_bytes = exp.generate(mock, h_name, h_code, period_name, div_name or "Divisi Panen", blk_code or "-")
         media_type = "application/pdf"
         ext = "pdf"
     elif format == "excel":
         exp = SlipExcelExporter()
+        file_bytes = exp.generate(mock, h_name, h_code, period_name)
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ext = "xlsx"
     elif format == "word":
         exp = SlipWordExporter()
+        file_bytes = exp.generate(mock, h_name, h_code, period_name)
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ext = "docx"
     else:
         raise HTTPException(status_code=400, detail="Unsupported format. Use pdf, excel, or word.")
         
-    file_bytes = exp.generate(mock, h_name, h_code, period_name)
     file_name = f"Slip_Gaji_{h_code}_{h_name}_{period_name}".replace(" ", "_")
     
     return StreamingResponse(
@@ -388,37 +425,46 @@ async def export_batch(
     month_names = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
     period_name = f"{month_names[period.month - 1]} {period.year}" if period else "Unknown"
 
-    if format not in ["pdf", "excel", "docx"]:
-        raise HTTPException(status_code=400, detail="Unsupported format. Use pdf, excel, or docx.")
+    fmt_norm = "docx" if format == "word" else format
+    if fmt_norm not in ["pdf", "excel", "docx"]:
+        raise HTTPException(status_code=400, detail="Unsupported format. Use pdf, excel, word, or docx.")
         
     # Create exporters
-    pdf_exp = SlipPdfExporter() if format == "pdf" else None
-    excel_exp = SlipExcelExporter() if format == "excel" else None
-    word_exp = SlipWordExporter() if format == "docx" else None
+    pdf_exp = SlipPdfExporter() if fmt_norm == "pdf" else None
+    excel_exp = SlipExcelExporter() if fmt_norm == "excel" else None
+    word_exp = SlipWordExporter() if fmt_norm == "docx" else None
 
     # We will build a ZIP file in memory containing all documents
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
         for summary in summaries:
-            harvester_res = await db.execute(select(Harvester).where(Harvester.id == summary.harvester_id))
-            harvester = harvester_res.scalar_one_or_none()
+            harvester_res = await db.execute(
+                select(Harvester, Division.name.label("division_name"), Block.code.label("block_code"))
+                .outerjoin(Division, Harvester.division_id == Division.id)
+                .outerjoin(Block, Harvester.block_id == Block.id)
+                .where(Harvester.id == summary.harvester_id)
+            )
+            row = harvester_res.first()
+            if row:
+                harvester, div_name, blk_code = row[0], row[1], row[2]
+                h_name = harvester.full_name
+                h_code = harvester.employee_number
+            else:
+                h_name, h_code, div_name, blk_code = "Unknown", "Unknown", "Divisi Panen", "-"
             
             tiers_res = await db.execute(select(PayrollTierDetail).where(PayrollTierDetail.payroll_summary_id == summary.id))
             summary.tier_details = tiers_res.scalars().all()
             setattr(summary, "daily_records", records_map.get(summary.harvester_id, []))
             
-            h_name = harvester.full_name if harvester else "Unknown"
-            h_code = harvester.employee_number if harvester else "Unknown"
-            
             file_name = f"Slip_Gaji_{h_code}_{h_name}_{period_name}".replace(" ", "_")
             
-            if format == "pdf":
-                file_bytes = pdf_exp.generate(summary, h_name, h_code, period_name)
+            if fmt_norm == "pdf":
+                file_bytes = pdf_exp.generate(summary, h_name, h_code, period_name, div_name or "Divisi Panen", blk_code or "-")
                 zip_file.writestr(f"{file_name}.pdf", file_bytes.getvalue())
-            elif format == "excel":
+            elif fmt_norm == "excel":
                 file_bytes = excel_exp.generate(summary, h_name, h_code, period_name)
                 zip_file.writestr(f"{file_name}.xlsx", file_bytes.getvalue())
-            elif format == "docx":
+            elif fmt_norm == "docx":
                 file_bytes = word_exp.generate(summary, h_name, h_code, period_name)
                 zip_file.writestr(f"{file_name}.docx", file_bytes.getvalue())
 
@@ -429,3 +475,27 @@ async def export_batch(
             "Content-Disposition": f'attachment; filename="Payroll_Batch_{batch_id}_{period_name}.zip"'.replace(" ", "_")
         }
     )
+
+@router.delete("/batches/{batch_id}", status_code=204)
+async def delete_payroll_batch(
+    batch_id: uuid.UUID,
+    payroll_repo: IPayrollRepository = Depends(get_payroll_repo)
+):
+    try:
+        success = await payroll_repo.delete_batch(batch_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Batch payroll tidak ditemukan")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+from pydantic import BaseModel
+
+class BulkDeleteBatchesReq(BaseModel):
+    batch_ids: List[uuid.UUID]
+
+@router.post("/batches/bulk-delete")
+async def bulk_delete_payroll_batches(
+    req: BulkDeleteBatchesReq,
+    payroll_repo: IPayrollRepository = Depends(get_payroll_repo)
+):
+    return await payroll_repo.bulk_delete_batches(req.batch_ids)

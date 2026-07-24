@@ -6,99 +6,320 @@
     <style>
         @page {
             size: A4;
-            margin: 2cm;
-            margin-top: 1cm;
+            margin: 1.8cm 1.5cm;
         }
+
+        * { box-sizing: border-box; }
+
         body {
-            font-family: Helvetica, sans-serif;
-            font-size: 11pt;
-            color: #333;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 9.5pt;
+            color: #23292f;
+            line-height: 1.5;
         }
+
+        /* ---------- Letterhead ---------- */
         .header-table {
             width: 100%;
-            border-bottom: 2px solid #2ecc71;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            padding-bottom: 12px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid #1c3d2e;
+            border-collapse: collapse;
         }
-        .title {
+        .header-table td {
+            vertical-align: middle;
+        }
+        .header-table .company-name {
+            margin: 0 0 1px 0;
+            padding: 0;
+            font-size: 14pt;
+            font-weight: bold;
+            color: #16211a;
+            letter-spacing: 0.2px;
+            line-height: 1.1;
+        }
+        .header-table .company-meta {
+            margin: 0;
+            padding: 0;
+            font-size: 8.5pt;
+            color: #6b7280;
+            line-height: 1.2;
+        }
+        .header-table .doc-tag {
+            text-align: right;
+            font-size: 8.5pt;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #6b7280;
+        }
+        .header-table .doc-period {
+            text-align: right;
+            font-size: 11.5pt;
+            font-weight: bold;
+            color: #16211a;
+            margin-top: 3px;
+        }
+
+        /* ---------- Document title ---------- */
+        .doc-eyebrow {
+            font-size: 8pt;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin: 0 0 3px 0;
+        }
+        .doc-title {
             font-size: 16pt;
             font-weight: bold;
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 20px;
+            color: #16211a;
+            margin: 0 0 16px 0;
         }
-        .info-table {
+
+        /* ---------- Employee meta grid ---------- */
+        .meta-table {
             width: 100%;
             margin-bottom: 20px;
+            border-top: 1px solid #d8dcd9;
+            border-bottom: 1px solid #d8dcd9;
+            border-collapse: collapse;
         }
-        .info-table td {
-            padding: 5px;
+        .meta-table td {
+            padding: 8px 8px;
+            font-size: 9.5pt;
+            vertical-align: top;
+            width: 25%;
+            line-height: 1.4;
         }
+        .meta-table .label {
+            color: #6b7280;
+            font-size: 7.5pt;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+        .meta-table .value {
+            font-weight: bold;
+            color: #16211a;
+            padding-top: 2px;
+        }
+
+        /* ---------- Section labels ---------- */
+        .section-label {
+            font-size: 8.5pt;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #1c3d2e;
+            font-weight: bold;
+            border-bottom: 1.5px solid #1c3d2e;
+            padding-bottom: 5px;
+            margin: 22px 0 8px 0;
+        }
+
+        /* ---------- Data tables ---------- */
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        .data-table th, .data-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
+            margin-bottom: 6px;
         }
         .data-table th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+            text-align: left;
+            font-size: 8pt;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #6b7280;
+            font-weight: normal;
+            border-bottom: 1.5px solid #d8dcd9;
+            padding: 9pt 10pt 8pt 10pt;
+            background-color: #f8faf8;
+            vertical-align: middle;
+            line-height: 1.5;
+        }
+        .data-table td {
+            border-bottom: 1px solid #eceeec;
+            padding: 9pt 10pt 8pt 10pt;
+            font-size: 9.5pt;
+            color: #23292f;
+            vertical-align: middle;
+            line-height: 1.6;
         }
         .right-align {
             text-align: right !important;
         }
-        .total-row {
-            font-weight: bold;
-            background-color: #e8f5e9;
+        .indent {
+            padding-left: 14px !important;
+            color: #4b5563;
         }
-        .signature-table {
+        .fine-value {
+            color: #8a1f1f;
+        }
+
+        .summary-table td {
+            padding: 10pt 10pt 9pt 10pt;
+            font-size: 9.5pt;
+            vertical-align: middle;
+            line-height: 1.6;
+            border-bottom: 1px solid #eceeec;
+        }
+
+        /* ---------- Two-column Penerimaan / Potongan ---------- */
+        .split-wrap {
             width: 100%;
-            margin-top: 50px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .split-wrap > tbody > tr > td {
+            vertical-align: top;
+            width: 50%;
+            padding: 0;
+        }
+        .split-wrap > tbody > tr > td:first-child {
+            padding-right: 14px;
+        }
+        .split-wrap > tbody > tr > td:last-child {
+            padding-left: 14px;
+            border-left: 1px solid #eceeec;
+        }
+        .col-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .col-table td {
+            padding: 7pt 0;
+            font-size: 9.5pt;
+            border-bottom: 1px solid #eceeec;
+            vertical-align: middle;
+        }
+        .col-total td {
+            font-weight: bold;
+            border-top: 2px solid #1c3d2e !important;
+            border-bottom: none !important;
+            padding-top: 10px !important;
+            color: #16211a;
+        }
+
+        /* ---------- Take Home Pay ---------- */
+        .thp-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        .thp-label {
+            font-size: 8pt;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin: 0 0 5px 0;
+        }
+        .thp-box {
+            display: inline-block;
+            border: 2px solid #1c3d2e;
+            padding: 8px 16px;
+            font-size: 14pt;
+            font-weight: bold;
+            color: #16211a;
+            background-color: #f0fdf4;
+        }
+        .thp-place {
+            text-align: right;
+            font-size: 9pt;
+            color: #6b7280;
+            vertical-align: bottom;
+        }
+
+        /* ---------- Signature ---------- */
+        .sig-table {
+            width: 100%;
+            margin-top: 28px;
             text-align: center;
+            border-collapse: collapse;
+        }
+        .sig-table td {
+            font-size: 9pt;
+            color: #23292f;
+            padding: 0 10px;
+            width: 50%;
+            vertical-align: top;
+        }
+        .sig-line {
+            display: block;
+            margin: 45px auto 5px auto;
+            border-top: 1px solid #23292f;
+            width: 65%;
+        }
+        .sig-name {
+            font-weight: bold;
+            color: #16211a;
+        }
+        .sig-role {
+            color: #6b7280;
+            font-size: 8pt;
+        }
+
+        /* ---------- Footer ---------- */
+        .doc-footer {
+            text-align: center;
+            font-size: 7.5pt;
+            color: #9ca3af;
+            border-top: 1px solid #eceeec;
+            padding-top: 10px;
+            margin-top: 28px;
+            letter-spacing: 0.3px;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div>
-        <table class="header-table">
-            <tr>
-                <td width="15%">
-                    <!-- Placeholder logo -->
-                    {% if header.logo_path %}
-                    <img src="{{ header.logo_path }}" height="50" alt="Logo">
-                    {% endif %}
-                </td>
-                <td width="85%">
-                    <h2 style="margin:0; color:#2c3e50;">{{ header.company_name }}</h2>
-                    <p style="margin:0; font-size:10pt; color:#7f8c8d;">
-                        {{ header.address }}<br>
-                        Telp: {{ header.contact }} | Email: {{ header.email }}
-                    </p>
-                </td>
-            </tr>
-        </table>
-    </div>
 
-    <div class="title" style="margin-top: 30px;">SLIP GAJI PEMANEN</div>
-
-    <table class="info-table">
+    <!-- Letterhead -->
+    <table class="header-table">
         <tr>
-            <td width="20%"><b>Pemanen</b></td>
-            <td width="30%">: {{ data.pemanen }}</td>
-            <td width="20%"><b>Periode</b></td>
-            <td width="30%">: {{ data.periode }}</td>
+            <td width="60" style="vertical-align: middle;">
+                {% if header.logo_path %}
+                <img src="{{ header.logo_path }}" width="48" height="48" alt="Logo" style="border-radius: 6px;">
+                {% else %}
+                <div style="width:48px; height:48px; background-color:#f0fdf4; border:1.5px solid #1c3d2e; text-align:center; color:#1c3d2e; font-weight:bold; font-size:8pt; line-height:48px; border-radius:6px;">PALM</div>
+                {% endif %}
+            </td>
+            <td style="vertical-align: middle; padding-left: 10px;">
+                <p class="company-name">{{ header.company_name }}</p>
+                <p class="company-meta">
+                    {{ header.address }} &nbsp;&middot;&nbsp; Telp: {{ header.contact }} &nbsp;&middot;&nbsp; {{ header.email }}
+                </p>
+            </td>
+            <td width="30%" style="vertical-align: middle; text-align: right;">
+                <div class="doc-tag">Slip Gaji</div>
+                <div class="doc-period">{{ data.periode }}</div>
+            </td>
         </tr>
     </table>
 
-    <table class="data-table">
+    <!-- Document title -->
+    <p class="doc-eyebrow">Dokumen Penggajian &nbsp;&middot;&nbsp; Divisi Panen</p>
+    <p class="doc-title">Slip Gaji Pemanen</p>
+
+    <!-- Employee metadata -->
+    <table class="meta-table">
         <tr>
-            <th colspan="2" style="background-color: #2ecc71; color: white;">Rangkuman Prestasi Panen</th>
+            <td>
+                <div class="label">NIK / ID Karyawan</div>
+                <div class="value">{{ data.nik }}</div>
+            </td>
+            <td>
+                <div class="label">Nama Pemanen</div>
+                <div class="value">{{ data.pemanen }}</div>
+            </td>
+            <td>
+                <div class="label">Divisi / Afdeling</div>
+                <div class="value">{{ data.afdeling }}</div>
+            </td>
+            <td>
+                <div class="label">Blok Kebun</div>
+                <div class="value">{{ data.blok }}</div>
+            </td>
         </tr>
+    </table>
+
+    <!-- Ringkasan Prestasi -->
+    <p class="section-label">Rangkuman Prestasi Panen</p>
+    <table class="data-table summary-table">
         <tr>
             <td width="70%">Total Janjang Masuk</td>
             <td width="30%" class="right-align">{{ data.total_janjang }} jjg</td>
@@ -113,75 +334,111 @@
         </tr>
     </table>
 
+    <!-- Rincian Harian -->
+    <p class="section-label">Rincian Prestasi Harian</p>
     <table class="data-table">
-        <tr>
-            <th colspan="6" style="background-color: #f39c12; color: white;">Rincian Prestasi Harian</th>
-        </tr>
-        <tr>
-            <th width="15%">Tanggal</th>
-            <th width="15%" class="right-align">Jjg Valid</th>
-            <th width="15%" class="right-align">Jjg Denda</th>
-            <th width="20%" class="right-align">Netto (kg)</th>
-            <th width="20%" class="right-align">Premi Brondol (Rp)</th>
-            <th width="15%" class="right-align">Potongan (Rp)</th>
-        </tr>
-        {% for r in data.daily_records %}
-        <tr>
-            <td>{{ r.date }}</td>
-            <td class="right-align">{{ r.valid }}</td>
-            <td class="right-align">{{ r.unripe }}</td>
-            <td class="right-align">{{ r.net_kg }}</td>
-            <td class="right-align">{{ r.loose_rp }}</td>
-            <td class="right-align" style="color: red;">{{ r.fine_rp }}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+            <tr>
+                <th width="15%">Tanggal</th>
+                <th width="15%" class="right-align">Jjg Valid</th>
+                <th width="15%" class="right-align">Jjg Denda</th>
+                <th width="20%" class="right-align">Netto (kg)</th>
+                <th width="20%" class="right-align">Premi Brondol (Rp)</th>
+                <th width="15%" class="right-align">Potongan (Rp)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in data.daily_records %}
+            <tr>
+                <td>{{ r.date }}</td>
+                <td class="right-align">{{ r.valid }}</td>
+                <td class="right-align">{{ r.unripe }}</td>
+                <td class="right-align">{{ r.net_kg }}</td>
+                <td class="right-align">{{ r.loose_rp }}</td>
+                <td class="right-align fine-value">{{ r.fine_rp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
 
-    <table class="data-table">
+    <!-- Penerimaan & Potongan (dua kolom) -->
+    <p class="section-label">Penerimaan &amp; Potongan</p>
+    <table class="split-wrap">
         <tr>
-            <th width="70%" style="background-color: #34495e; color: white;">Rincian Pendapatan & Potongan</th>
-            <th width="30%" class="right-align" style="background-color: #34495e; color: white;">Jumlah (Rp)</th>
-        </tr>
-        <tr>
-            <td>Premi Brondolan (Loose Fruit)</td>
-            <td class="right-align">{{ data.brondolan_rp }}</td>
-        </tr>
-        
-        {% for t in data.tiers %}
-        <tr>
-            <td style="padding-left: 20px;">- Premi Progresif Tier {{ t.level }} ({{ t.kg }} kg x Rp {{ t.rate }})</td>
-            <td class="right-align">{{ t.subtotal }}</td>
-        </tr>
-        {% endfor %}
-
-        <tr>
-            <td style="color: red;">Potongan Denda (Mode: {{ data.fine_mode }})</td>
-            <td class="right-align" style="color: red;">({{ data.denda_rp }})</td>
-        </tr>
-        <tr class="total-row">
-            <td>TOTAL PENDAPATAN BERSIH (NET PAY)</td>
-            <td class="right-align">Rp {{ data.net_pay }}</td>
-        </tr>
-    </table>
-
-    <table class="signature-table">
-        <tr>
-            <td width="50%">
-                Mengetahui,<br><br><br><br><br>
-                (___________________)<br>
-                Asisten Divisi / Manager
+            <td>
+                <table class="col-table">
+                    <tr>
+                        <td colspan="2" style="font-size:7.5pt; letter-spacing:0.5px; text-transform:uppercase; color:#6b7280; border-bottom:1px solid #d8dcd9; padding-bottom:6px;">Penerimaan</td>
+                    </tr>
+                    <tr>
+                        <td>Premi Brondolan (Loose Fruit)</td>
+                        <td class="right-align">{{ data.brondolan_rp }}</td>
+                    </tr>
+                    {% for t in data.tiers %}
+                    <tr>
+                        <td class="indent">Tier {{ t.level }} ({{ t.kg }} kg &times; Rp {{ t.rate }})</td>
+                        <td class="right-align">{{ t.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="col-total">
+                        <td>Total Penerimaan</td>
+                        <td class="right-align">{{ data.total_penerimaan }}</td>
+                    </tr>
+                </table>
             </td>
-            <td width="50%">
-                Diterima Oleh,<br><br><br><br><br>
-                (___________________)<br>
-                {{ data.pemanen }}
+            <td>
+                <table class="col-table">
+                    <tr>
+                        <td colspan="2" style="font-size:7.5pt; letter-spacing:0.5px; text-transform:uppercase; color:#6b7280; border-bottom:1px solid #d8dcd9; padding-bottom:6px;">Potongan</td>
+                    </tr>
+                    <tr>
+                        <td class="fine-value">Denda Panen (Mode: {{ data.fine_mode }})</td>
+                        <td class="right-align fine-value">{{ data.denda_rp }}</td>
+                    </tr>
+                    <tr class="col-total">
+                        <td>Total Potongan</td>
+                        <td class="right-align">{{ data.total_potongan }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Take Home Pay -->
+    <table class="thp-table">
+        <tr>
+            <td width="60%">
+                <p class="thp-label">Total Diterima (Take Home Pay)</p>
+                <span class="thp-box">Rp {{ data.net_pay }}</span>
+            </td>
+            <td width="40%" class="thp-place">
+                {{ data.tempat }}, {{ data.tanggal_slip }}
+            </td>
+        </tr>
+    </table>
+
+    <!-- Tanda Tangan -->
+    <table class="sig-table">
+        <tr>
+            <td>
+                Disetujui Oleh,<br>
+                <span class="sig-line"></span>
+                <span class="sig-name">{{ data.approver_name }}</span><br>
+                <span class="sig-role">{{ data.approver_role }}</span>
+            </td>
+            <td>
+                Diterima Oleh,<br>
+                <span class="sig-line"></span>
+                <span class="sig-name">{{ data.pemanen_name }}</span><br>
+                <span class="sig-role">Pemanen</span>
             </td>
         </tr>
     </table>
 
     <!-- Footer -->
-    <div style="text-align:center; font-size:9pt; color:#95a5a6; border-top:1px solid #eee; padding-top:10px; margin-top:50px;">
-        Dokumen ini dicetak secara otomatis oleh Sistem Penggajian
+    <div class="doc-footer">
+        Dokumen ini dicetak secara otomatis oleh Sistem Penggajian &nbsp;&middot;&nbsp; {{ header.company_name }}
     </div>
+
 </body>
 </html>

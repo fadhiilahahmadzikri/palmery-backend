@@ -4,7 +4,7 @@ import uuid
 from src.infrastructure.database.models import PayrollPeriod, PayrollSummary, PayrollBatch
 
 # Valid batch statuses (simplified):
-#   'draft'  — kalkulasi sedang berjalan / preview, data masih bisa berubah
+#   'draft'  — kalkulasi Sedang berjalan / preview, data masih bisa berubah
 #   'final'  — kalkulasi dikunci, siap ekspor resmi
 # Backward-compatible: 'generated', 'approved', 'paid' diperlakukan sama seperti statusnya
 # saat dibaca di UI (lihat helper normalize_batch_status di payroll.py).
@@ -19,6 +19,10 @@ class IPayrollRepository(ABC):
     @abstractmethod
     async def get_current_period(self) -> PayrollPeriod:
         """Return (or create) the PayrollPeriod for the current calendar month."""
+        pass
+
+    @abstractmethod
+    async def close_period(self, period_id: uuid.UUID) -> Optional[PayrollPeriod]:
         pass
 
     @abstractmethod
@@ -52,4 +56,12 @@ class IPayrollRepository(ABC):
 
     @abstractmethod
     async def get_summary_by_id(self, summary_id: uuid.UUID) -> Optional[PayrollSummary]:
+        pass
+
+    @abstractmethod
+    async def delete_batch(self, batch_id: uuid.UUID) -> bool:
+        pass
+
+    @abstractmethod
+    async def bulk_delete_batches(self, batch_ids: List[uuid.UUID]) -> dict:
         pass

@@ -273,3 +273,14 @@ async def delete_record(record_id: uuid.UUID, repo: IHarvestRepository = Depends
             raise HTTPException(status_code=404, detail="Record not found")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+class BulkDeleteRecordsReq(BaseModel):
+    record_ids: List[uuid.UUID]
+
+@router.post("/bulk-delete")
+async def bulk_delete_records(
+    req: BulkDeleteRecordsReq,
+    repo: IHarvestRepository = Depends(get_harvest_repo)
+):
+    result = await repo.bulk_delete_records(req.record_ids)
+    return result

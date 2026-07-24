@@ -61,7 +61,11 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = get_url()
+    custom_url = config.get_main_option("sqlalchemy.url")
+    if not custom_url or custom_url.startswith("driver://") or "user:pass" in custom_url:
+        configuration["sqlalchemy.url"] = get_url()
+    else:
+        configuration["sqlalchemy.url"] = custom_url
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",

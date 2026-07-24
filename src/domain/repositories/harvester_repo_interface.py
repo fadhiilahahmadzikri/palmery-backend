@@ -23,3 +23,7 @@ class IHarvesterRepository(ABC):
     @abstractmethod
     async def delete_harvester(self, harvester_id: uuid.UUID) -> bool:
         pass
+
+    @abstractmethod
+    async def bulk_delete_harvesters(self, harvester_ids: List[uuid.UUID]) -> dict:
+        pass

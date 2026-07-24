@@ -41,6 +41,18 @@ class ILocationRepository(ABC):
         pass
 
     @abstractmethod
+    async def bulk_delete_divisions(self, division_ids: List[uuid.UUID]) -> dict:
+        pass
+
+    @abstractmethod
+    async def bulk_delete_blocks(self, block_ids: List[uuid.UUID]) -> dict:
+        pass
+
+    @abstractmethod
+    async def bulk_delete_points(self, point_ids: List[uuid.UUID]) -> dict:
+        pass
+
+    @abstractmethod
     async def update_division(self, division_id: uuid.UUID, data: dict) -> Optional[Division]:
         pass
 

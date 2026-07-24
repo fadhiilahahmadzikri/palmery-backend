@@ -41,7 +41,7 @@ class Division(Base):
 class Block(Base):
     __tablename__ = 'blocks'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    division_id = Column(UUID(as_uuid=True), ForeignKey('divisions.id', ondelete='CASCADE'), nullable=False)
+    division_id = Column(UUID(as_uuid=True), ForeignKey('divisions.id', ondelete='RESTRICT'), nullable=False)
     code = Column(String(20), nullable=False)
     planting_year = Column(Integer)
     area_ha = Column(Numeric)
@@ -55,13 +55,13 @@ class Block(Base):
     )
 
     division = relationship("Division", back_populates="blocks")
-    collection_points = relationship("CollectionPoint", back_populates="block", cascade="all, delete-orphan", passive_deletes=True)
-    harvest_records = relationship("DailyHarvestRecord", back_populates="block", cascade="all, delete-orphan", passive_deletes=True)
+    collection_points = relationship("CollectionPoint", back_populates="block")
+    harvest_records = relationship("DailyHarvestRecord", back_populates="block")
 
 class CollectionPoint(Base):
     __tablename__ = 'collection_points'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    block_id = Column(UUID(as_uuid=True), ForeignKey('blocks.id', ondelete='CASCADE'), nullable=False)
+    block_id = Column(UUID(as_uuid=True), ForeignKey('blocks.id', ondelete='RESTRICT'), nullable=False)
     point_number = Column(Integer, nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -72,7 +72,7 @@ class CollectionPoint(Base):
     )
 
     block = relationship("Block", back_populates="collection_points")
-    harvest_records = relationship("DailyHarvestRecord", back_populates="collection_point", cascade="all, delete-orphan", passive_deletes=True)
+    harvest_records = relationship("DailyHarvestRecord", back_populates="collection_point")
 
 class Harvester(Base):
     __tablename__ = 'harvesters'
@@ -83,8 +83,8 @@ class Harvester(Base):
     address = Column(Text)
     date_of_birth = Column(Date)
     gender = Column(String(1))
-    division_id = Column(UUID(as_uuid=True), ForeignKey('divisions.id'))
-    block_id = Column(UUID(as_uuid=True), ForeignKey('blocks.id'))
+    division_id = Column(UUID(as_uuid=True), ForeignKey('divisions.id', ondelete='RESTRICT'))
+    block_id = Column(UUID(as_uuid=True), ForeignKey('blocks.id', ondelete='RESTRICT'))
     hire_date = Column(Date)
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -177,9 +177,9 @@ class PayrollPeriod(Base):
 class DailyHarvestRecord(Base):
     __tablename__ = 'daily_harvest_records'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    harvester_id = Column(UUID(as_uuid=True), ForeignKey('harvesters.id'), nullable=False)
-    block_id = Column(UUID(as_uuid=True), ForeignKey('blocks.id', ondelete='CASCADE'), nullable=False)
-    collection_point_id = Column(UUID(as_uuid=True), ForeignKey('collection_points.id', ondelete='CASCADE'), nullable=False)
+    harvester_id = Column(UUID(as_uuid=True), ForeignKey('harvesters.id', ondelete='RESTRICT'), nullable=False)
+    block_id = Column(UUID(as_uuid=True), ForeignKey('blocks.id', ondelete='RESTRICT'), nullable=False)
+    collection_point_id = Column(UUID(as_uuid=True), ForeignKey('collection_points.id', ondelete='RESTRICT'), nullable=False)
     harvest_date = Column(Date, nullable=False, server_default=func.current_date())
     
     valid_bunch_count = Column(Integer, nullable=False)
@@ -249,7 +249,7 @@ class PayrollSummary(Base):
     __tablename__ = 'payroll_summaries'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     payroll_batch_id = Column(UUID(as_uuid=True), ForeignKey('payroll_batches.id', ondelete='CASCADE'), nullable=False)
-    harvester_id = Column(UUID(as_uuid=True), ForeignKey('harvesters.id'), nullable=False)
+    harvester_id = Column(UUID(as_uuid=True), ForeignKey('harvesters.id', ondelete='RESTRICT'), nullable=False)
     
     total_valid_bunch_count = Column(Integer, nullable=False, default=0)
     total_unripe_bunch_count = Column(Integer, nullable=False, default=0)
