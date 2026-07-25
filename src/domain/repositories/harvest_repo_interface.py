@@ -6,7 +6,14 @@ from src.infrastructure.database.models import DailyHarvestRecord
 
 class IHarvestRepository(ABC):
     @abstractmethod
-    async def get_records(self, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> Tuple[List[DailyHarvestRecord], int]:
+    async def get_records(
+        self, 
+        skip: int = 0, 
+        limit: int = 100, 
+        search: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ) -> Tuple[List[DailyHarvestRecord], int]:
         pass
 
     @abstractmethod

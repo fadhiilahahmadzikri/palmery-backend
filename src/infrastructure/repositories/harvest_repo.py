@@ -12,11 +12,30 @@ class HarvestRepository(IHarvestRepository):
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_records(self, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> Tuple[List[DailyHarvestRecord], int]:
+    async def get_records(
+        self, 
+        skip: int = 0, 
+        limit: int = 100, 
+        search: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ) -> Tuple[List[DailyHarvestRecord], int]:
         query = select(DailyHarvestRecord)
         
+        if start_date:
+            query = query.where(DailyHarvestRecord.harvest_date >= start_date)
+        if end_date:
+            query = query.where(DailyHarvestRecord.harvest_date <= end_date)
+        if search:
+            from src.infrastructure.database.models import Harvester
+            query = query.join(Harvester, DailyHarvestRecord.harvester_id == Harvester.id).where(
+                (Harvester.full_name.ilike(f"%{search}%")) |
+                (Harvester.employee_number.ilike(f"%{search}%"))
+            )
+            
         total = await self.db.execute(select(func.count()).select_from(query.subquery()))
         
+        query = query.order_by(DailyHarvestRecord.harvest_date.desc(), DailyHarvestRecord.created_at.desc())
         result = await self.db.execute(query.offset(skip).limit(limit))
         return result.scalars().all(), total.scalar()
 

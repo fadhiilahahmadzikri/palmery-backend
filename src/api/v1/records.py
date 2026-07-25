@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import List
+from typing import List, Optional
+from datetime import date
 import uuid
 
 from src.domain.models.harvest import HarvestRecordCreate, HarvestRecordResponse, PaginatedHarvestRecordResponse
@@ -17,9 +18,25 @@ async def get_records(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     search: str = Query(None),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    year: Optional[int] = Query(None),
+    month: Optional[int] = Query(None),
     repo: IHarvestRepository = Depends(get_harvest_repo)
 ):
-    records, total = await repo.get_records(skip=skip, limit=limit, search=search)
+    if year and month and not start_date and not end_date:
+        import calendar
+        start_date = date(year, month, 1)
+        _, last_day = calendar.monthrange(year, month)
+        end_date = date(year, month, last_day)
+
+    records, total = await repo.get_records(
+        skip=skip, 
+        limit=limit, 
+        search=search,
+        start_date=start_date,
+        end_date=end_date
+    )
     return PaginatedHarvestRecordResponse(data=records, total=total)
 
 from fastapi.responses import StreamingResponse
